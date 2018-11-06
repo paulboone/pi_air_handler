@@ -1,7 +1,21 @@
 from datetime import datetime
 import urllib.request
 
-RELAY1 = 21
+debug_no_GPIO = False
+
+def switch_air_handler(air_handler_on):
+    RELAY1 = 21
+    import RPi.GPIO as GPIO
+
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(RELAY1, GPIO.OUT)
+
+    if air_handler_on:
+        GPIO.output(RELAY1, GPIO.LOW)
+    else:
+        GPIO.output(RELAY1, GPIO.HIGH)
+
+
 
 def scrape(s, startstring, stopstring):
     idx = s.find(startstring)
@@ -31,17 +45,14 @@ aqi100_50 = 54.0
 pm025_limit = aqi025_50 / 5 # AQI < 10
 pm100_limit = aqi100_50 / 5 # AQI < 10
 
-import RPi.GPIO as GPIO
-
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(RELAY1, GPIO.OUT)
-
-formatted_pinside = ",".join([str(pm) for pm in pinside])
-formatted_poutside = ",".join([str(pm) for pm in poutside])
-
 if (pinside[2] > pm025_limit or pinside[4] > pm100_limit):
-    print('%s: turn air handler ON (%s; %s)' % (datetime.now().isoformat(), formatted_pinside, formatted_poutside))
-    GPIO.output(RELAY1, GPIO.HIGH)
+    air_handler_on = True
 else:
-    print('%s: turn air handler OFF (%s; %s)' % (datetime.now().isoformat(), formatted_pinside, formatted_poutside))
-    GPIO.output(RELAY1, GPIO.LOW)
+    air_handler_on = False
+air_handler_status = "ON" if air_handler_on else "OFF"
+
+if not debug_no_GPIO:
+    switch_air_handler(air_handler_on)
+
+data = (datetime.now().isoformat(), air_handler_status, *pinside, *poutside)
+print(",".join([str(d) for d in data]))
