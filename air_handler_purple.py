@@ -11,9 +11,9 @@ def switch_air_handler(air_handler_on):
     GPIO.setup(RELAY1, GPIO.OUT)
 
     if air_handler_on:
-        GPIO.output(RELAY1, GPIO.LOW)
-    else:
         GPIO.output(RELAY1, GPIO.HIGH)
+    else:
+        GPIO.output(RELAY1, GPIO.LOW)
 
 
 
