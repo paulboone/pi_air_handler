@@ -1,12 +1,13 @@
-from datetime import datetime
-import urllib.request
 
-debug_no_GPIO = False
+from datetime import datetime
+import json
+from urllib.request import urlopen
+
+debug_no_GPIO = True
 
 def switch_air_handler(air_handler_on):
     RELAY1 = 21
     import RPi.GPIO as GPIO
-
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(RELAY1, GPIO.OUT)
 
@@ -15,37 +16,19 @@ def switch_air_handler(air_handler_on):
     else:
         GPIO.output(RELAY1, GPIO.LOW)
 
-
-
-def scrape(s, startstring, stopstring):
-    idx = s.find(startstring)
-    s1 = s[idx + len(startstring):]
-    idx = s1.find(stopstring)
-    return float(s1[0:idx]), s1
-
-def get_purple_air_pms(url):
-    with urllib.request.urlopen(url) as response:
-        html = response.read().decode('utf-8')
-
-    pm025a, srem = scrape(html, "PM</font>2.5</b><br><b><font  style='font-size:140px'>", "</font>")
-    pm025b, srem = scrape(srem, "<font  style='font-size:140px'>", "</font>")
-    pm010a, srem = scrape(srem, "PM</font>10</b></td></tr><tr><td><b><font size=+4>", "</font>")
-    pm010b, srem = scrape(srem, "<font size=+4>", "</font>")
-    pm100a, srem = scrape(srem, "<font size=+4>", "</font>")
-    pm100b, srem = scrape(srem, "<font size=+4>", "</font>")
-
-    return [pm010a, pm010b, pm025a, pm025b, pm100a, pm100b]
-
-pinside = get_purple_air_pms('http://192.168.1.207/')
-poutside = get_purple_air_pms('http://192.168.1.208/')
-
 aqi025_50 = 12.0
 aqi100_50 = 54.0
 
 pm025_limit = aqi025_50 / 5 # AQI < 10
 pm100_limit = aqi100_50 / 5 # AQI < 10
 
-if (pinside[2] > pm025_limit or pinside[4] > pm100_limit):
+pinside = json.load(urlopen('http://192.168.1.221/json?live=false'))
+poutside = json.load(urlopen('http://192.168.1.208/json?live=false'))
+
+pm025 = (pinside['p_2_5_um'] + pinside['p_2_5_um_b']) / 2
+pm100 = (pinside['p_10_0_um'] + pinside['p_10_0_um_b']) / 2
+
+if (pm025 > pm025_limit or pm100 > pm100_limit):
     air_handler_on = True
 else:
     air_handler_on = False
@@ -54,5 +37,8 @@ air_handler_status = "ON" if air_handler_on else "OFF"
 if not debug_no_GPIO:
     switch_air_handler(air_handler_on)
 
-data = (datetime.now().isoformat(), air_handler_status, *pinside, *poutside)
+output_keys = ['p_1_0_um', 'p_1_0_um_b', 'p_2_5_um', 'p_2_5_um_b', 'p_10_0_um', 'p_10_0_um_b']
+pinside['p_1_0_um_b'],pinside['p_1_0_um_b']
+data = (datetime.now().isoformat(), air_handler_status,
+    *[pinside[k] for k in output_keys], *[poutside[k] for k in output_keys])
 print(",".join([str(d) for d in data]))
