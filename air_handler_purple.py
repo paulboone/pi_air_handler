@@ -22,8 +22,8 @@ aqi100_50 = 54.0
 pm025_limit = aqi025_50 / 5 # AQI < 10
 pm100_limit = aqi100_50 / 5 # AQI < 10
 
-pinside = json.load(urlopen('http://192.168.1.221/json?live=false'))
-poutside = json.load(urlopen('http://192.168.1.208/json?live=false'))
+pinside = json.loads(urlopen('http://192.168.1.221/json?live=false').read().decode('utf-8'))
+poutside = json.loads(urlopen('http://192.168.1.208/json?live=false').read().decode('utf-8'))
 
 pm025 = (pinside['p_2_5_um'] + pinside['p_2_5_um_b']) / 2
 pm100 = (pinside['p_10_0_um'] + pinside['p_10_0_um_b']) / 2
