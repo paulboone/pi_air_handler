@@ -25,8 +25,8 @@ pm100_limit = aqi100_50 / 5 # AQI < 10
 pinside = json.loads(urlopen('http://192.168.1.221/json?live=false').read().decode('utf-8'))
 poutside = json.loads(urlopen('http://192.168.1.208/json?live=false').read().decode('utf-8'))
 
-pm025 = (pinside['p_2_5_um'] + pinside['p_2_5_um_b']) / 2
-pm100 = (pinside['p_10_0_um'] + pinside['p_10_0_um_b']) / 2
+pm025 = (pinside['pm2_5_atm'] + pinside['pm2_5_atm_b']) / 2
+pm100 = (pinside['pm10_0_atm'] + pinside['pm10_0_atm_b']) / 2
 
 if (pm025 > pm025_limit or pm100 > pm100_limit):
     air_handler_on = True
@@ -37,8 +37,8 @@ air_handler_status = "ON" if air_handler_on else "OFF"
 if not debug_no_GPIO:
     switch_air_handler(air_handler_on)
 
-output_keys = ['p_1_0_um', 'p_1_0_um_b', 'p_2_5_um', 'p_2_5_um_b', 'p_10_0_um', 'p_10_0_um_b']
-pinside['p_1_0_um_b'],pinside['p_1_0_um_b']
+output_keys = ['pm1_0_atm', 'pm1_0_atm_b', 'pm2_5_atm', 'pm2_5_atm_b', 'pm10_0_atm', 'pm10_0_atm_b']
+pinside['pm1_0_atm_b'],pinside['pm1_0_atm_b']
 data = (datetime.now().isoformat(), air_handler_status,
     *[pinside[k] for k in output_keys], *[poutside[k] for k in output_keys])
 print(",".join([str(d) for d in data]))
