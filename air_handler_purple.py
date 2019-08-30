@@ -3,9 +3,10 @@ from datetime import datetime
 import json
 from urllib.request import urlopen
 
-from air_handler.utils import switch_air_handler, load_config
+from air_handler.utils import switch_air_handler, load_config, load_runstate
 
 config = load_config()
+state = load_runstate()
 
 # define particle limits to hit a threshold AQI of 50 for 025 and 100 particle sizes
 aqi025_50 = 12.0
@@ -25,10 +26,17 @@ pm100 = (pinside['pm10_0_atm'] + pinside['pm10_0_atm_b']) / 2
 
 # turn air handler on if particulate limits are exceeded
 air_handler_on = (pm025 > pm025_limit or pm100 > pm100_limit)
-if not config['debug_no_GPIO']:
+if not config['debug_no_GPIO'] and state==2:
     switch_air_handler(air_handler_on, config['relay_num'])
 
-air_handler_status = "ON" if air_handler_on else "OFF"
+if state == 2:
+    air_handler_status = "AUTO-ON" if air_handler_on else "AUTO-OFF"
+elif state == 1:
+    air_handler_status = "ON"
+    air_handler_statue += "/ON" if air_handler_on else "/OFF"
+elif state == 0:
+    air_handler_status = "OFF"
+    air_handler_statue += "/ON" if air_handler_on else "/OFF"
 
 output_keys = ['pm1_0_atm', 'pm1_0_atm_b', 'pm2_5_atm', 'pm2_5_atm_b', 'pm10_0_atm', 'pm10_0_atm_b']
 
