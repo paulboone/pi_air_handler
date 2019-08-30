@@ -29,6 +29,16 @@ def parse_runstate(turn_on):
         raise("bad runstate")
     return state
 
+def human_runstate(state):
+    if state == 2:
+        return "AUTO"
+    elif state == 1:
+        return "ON"
+    elif state == 0:
+        return "OFF"
+    else:
+        return "UNKNOWN"
+
 def write_runstate(state, filename="runstate.txt"):
     with open(filename, 'w') as f:
         f.write(str(state))
