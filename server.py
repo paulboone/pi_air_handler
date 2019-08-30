@@ -19,4 +19,4 @@ def fan(turn_on):
 
     return template('<b>Hello {{name}}</b>!', name=turn_on)
 
-run(port=8080)
+run(host='0.0.0.0', port=8080)
