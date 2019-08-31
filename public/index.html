@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <title>htm Demo</title>
+
+  <script type="module">
+  import { html, Component, render } from 'https://unpkg.com/htm/preact/standalone.module.js';
+
+  class Aqi extends Component {
+
+    constructor() {
+      super();
+      this.state.indoor_aqi = null;
+    }
+
+    updateFromPA() {
+      fetch('http://192.168.1.221/json?live=false')
+        .then((resp) => resp.json()) // Transform the data into json
+        .then(data => {
+          this.setState({ indoor_aqi: (data.pm2_5_atm + data.pm2_5_atm_b) / 2 });
+        });
+    }
+
+    componentDidMount() {
+        // update time every 60s
+        this.timer = setInterval(() => {
+          this.updateFromPA();
+        }, 60000);
+
+        this.updateFromPA();
+    }
+
+    componentWillUnmount() {
+      // stop when not renderable
+      clearInterval(this.timer);
+    }
+
+    render(props, state) {
+      return html`<span>${state.indoor_aqi}</span>`;
+    }
+  }
+
+  // render an instance of Clock into <body>:
+  render(html`<${Aqi} />`, document.getElementById("aqi"));
+</script>
+
+
+<body>
+  <div id="aqi"></div>
+</body>
+</html>

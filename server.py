@@ -1,11 +1,16 @@
-from bottle import route, run, template, get, request
+from bottle import route, run, template, get, request, static_file
 from air_handler.utils import switch_air_handler, load_config, \
                                 parse_runstate, write_runstate, load_runstate, human_runstate
 
 @route('/')
 def index():
-    state = load_runstate()
-    return template('<b>state is {{state}}</b>!', state=human_runstate(state))
+    return static_file("index.html", root='./public')
+
+@route('/dist/<filepath:path>')
+def static_files(filepath):
+    return static_file(filepath, root='./public/')
+
+
 
 @route('/fan/<turn_on>')
 def fan(turn_on):
