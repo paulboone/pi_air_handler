@@ -1,3 +1,5 @@
+import json
+
 from bottle import route, run, template, get, request, static_file
 from air_handler.utils import switch_air_handler, load_config, \
                                 parse_runstate, write_runstate, load_runstate, human_runstate
@@ -11,6 +13,11 @@ def static_files(filepath):
     return static_file(filepath, root='./public/')
 
 
+@route('/fan')
+def fan_status():
+    state = load_runstate()
+    return json.dumps({'state':state})
+
 
 @route('/fan/<turn_on>')
 def fan(turn_on):
@@ -23,7 +30,6 @@ def fan(turn_on):
         print("debuging is on; not attempting GPIO switch")
 
     write_runstate(state)
-
-    return template('<b>Turning fan to: {{name}}</b>!', name=turn_on)
+    return json.dumps({'state':state})
 
 run(host='0.0.0.0', port=8080)

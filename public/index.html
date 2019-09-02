@@ -1,50 +1,187 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <title>htm Demo</title>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+
+    body {font-family: sans-serif}
+
+    div#interface-box {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      margin-top: 10vh;
+      height: 90%;
+      background: white;
+      color: black;
+      text-align: center;
+    }
+    .vsection {
+      margin-top: 2vh;
+    }
+    .aqi {font-weight: bold; font-size:30vh; text-align: center; font-family: sans-serif}
+    #indoor {font-size:30vh;}
+    #outdoor {font-size:15vh;}
+
+    #fancontrol span.current-fan-state {
+      font-weight: bold;
+      font-size: 5vh;
+    }
+    #fancontrol a {
+      font-weight: normal;
+      text-decoration: none;
+      font-size: 5vh;
+    }
+
+    body:before, body:after {
+        content: "";
+        position: fixed;
+        background: white;
+        left: 0;
+        right: 0;
+        height: 5vh;
+    }
+    body:before {
+        top: 0;
+    }
+    body:after {
+        bottom: 0;
+    }
+    body.aqigood:before, body.aqigood:after {
+      background: #18D818;
+    }
+    body.aqiok:before, body.aqiok:after {
+      background: #fcd307;
+    }
+    body.aqibad:before, body.aqibad:after {
+      background: #900;
+    }
+
+
+  </style>
+  <title>AQI Dashboard</title>
 
   <script type="module">
   import { html, Component, render } from 'https://unpkg.com/htm/preact/standalone.module.js';
 
   class Aqi extends Component {
-
-    constructor() {
+    constructor(props) {
       super();
-      this.state.indoor_aqi = null;
     }
 
-    updateFromPA() {
-      fetch('http://192.168.1.221/json?live=false')
+    updateFromPA(url) {
+      fetch(url)
         .then((resp) => resp.json()) // Transform the data into json
         .then(data => {
-          this.setState({ indoor_aqi: (data.pm2_5_atm + data.pm2_5_atm_b) / 2 });
+          this.setState({ indoor_aqi: Math.round((data['pm2.5_aqi'] + data['pm2.5_aqi_b']) / 2) });
+
+          if (this.state.updateBody) {
+            if (this.state.indoor_aqi <= 50) {
+              document.querySelector('body').classList.add("aqigood");
+              document.querySelector('body').classList.remove("aqiok");
+              document.querySelector('body').classList.remove("aqibad");
+            } else if (this.state.indoor_aqi <= 100) {
+              document.querySelector('body').classList.remove("aqigood");
+              document.querySelector('body').classList.add("aqiok");
+              document.querySelector('body').classList.remove("aqibad");
+            } else {
+              document.querySelector('body').classList.remove("aqigood");
+              document.querySelector('body').classList.remove("aqiok");
+              document.querySelector('body').classList.add("aqibad");
+            }
+          }
         });
     }
 
     componentDidMount() {
-        // update time every 60s
-        this.timer = setInterval(() => {
-          this.updateFromPA();
-        }, 60000);
+        this.setState({indoor_aqi: null, url: this.props.url, updateBody: this.props.updateBody});
+        this.updateFromPA(this.state.url);
 
-        this.updateFromPA();
+        // update AQI every 30s
+        this.timer = setInterval(() => {
+          this.updateFromPA(this.state.url);
+        }, 60000);
     }
 
     componentWillUnmount() {
-      // stop when not renderable
       clearInterval(this.timer);
     }
 
     render(props, state) {
-      return html`<span>${state.indoor_aqi}</span>`;
+      return html`<span class="aqi-text">${state.indoor_aqi}</span>`;
     }
   }
 
-  // render an instance of Clock into <body>:
-  render(html`<${Aqi} />`, document.getElementById("aqi"));
-</script>
+  class FanControl extends Component {
+    constructor(props) {
+      super();
+      this.controlFan = this.controlFan.bind(this);
+    }
 
+    getFanState(url) {
+      fetch(url).then((resp) => resp.json()).then(data => {
+          this.setState({ fanstate: data.state});
+        });
+    }
+
+    controlFan(num) {
+      fetch(this.state.url + "/" + num)
+        .then((resp) => resp.json())
+        .then(data => {
+          this.setState({ fanstate: data.state });
+        });
+    }
+
+    componentDidMount() {
+      this.setState({fanstate: null, url: this.props.url, updateBody: this.props.updateBody});
+      this.getFanState(this.state.url);
+    }
+
+    renderFanState(state, current_state) {
+      const human_state_names = {0: "off", 1: "on", 2: "auto"};
+      if (state == current_state) {
+        return html`<span class="current-fan-state"> ${human_state_names[state]} </span>`
+      } else {
+        return html`<a href="#" onclick="${(e) => this.controlFan(state, e)}"> ${human_state_names[state]} </a>`
+      }
+    }
+
+    render(props, state) {
+      return html`<div>
+        ${this.renderFanState(0, state.fanstate)}
+        ${this.renderFanState(1, state.fanstate)}
+        ${this.renderFanState(2, state.fanstate)}
+      </div>`;
+    }
+  }
+
+  render(html`<${Aqi} url="http://192.168.1.221/json?live=false" updateBody />`, document.getElementById("indoor"));
+  render(html`<${Aqi} url="http://192.168.1.208/json?live=false" />`, document.getElementById("outdoor"));
+  render(html`<${FanControl} url="http://127.0.0.1:8080/fan" />`, document.getElementById("fancontrol"));
+</script>
+</head>
 
 <body>
-  <div id="aqi"></div>
+  <div id="body-before" />
+
+  <div id="interface-box">
+    <div>
+        Indoor AQI:
+        <div id="indoor" class="aqi" />
+    </div>
+    <div class="vsection">
+        Outdoor AQI:
+        <div id="outdoor" class="aqi" />
+    </div>
+    <div class="vsection">
+      Fan control:
+      <div id="fancontrol" />
+    </div>
+  </div>
 </body>
+
 </html>
