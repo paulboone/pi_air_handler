@@ -161,7 +161,7 @@
 
   render(html`<${Aqi} url="http://192.168.1.221/json?live=false" updateBody />`, document.getElementById("indoor"));
   render(html`<${Aqi} url="http://192.168.1.208/json?live=false" />`, document.getElementById("outdoor"));
-  render(html`<${FanControl} url="http://127.0.0.1:8080/fan" />`, document.getElementById("fancontrol"));
+  render(html`<${FanControl} url="/fan" />`, document.getElementById("fancontrol"));
 </script>
 </head>
 
