@@ -66,7 +66,12 @@
   <title>AQI Dashboard</title>
 
   <script type="module">
+
+  // note: unpkg version do not correspond to actula preact versions. The 2.2.1 here should
+  // correspond with preact 8.5 something. Presumably preact could be versioned directly here.
   import { html, Component, render } from 'https://unpkg.com/htm@2.2.1/preact/standalone.module.js';
+
+
 
   class Aqi extends Component {
     constructor(props) {
